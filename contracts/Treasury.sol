@@ -3,7 +3,7 @@ pragma solidity ^0.8.9;
 import "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../lib/protocol-v2/contracts/interfaces/ILendingPool.sol";
-import "../lib/compound-protocol/contracts/CErc20.sol";
+// import "../lib/compound-protocol/contracts/CErc20.sol";
 import "../contracts/interfaces/Interface.sol";
 
 
@@ -25,7 +25,7 @@ contract Treasury {
     IERC20 private constant DAI = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F); // DAI contract address
     IUniswapV2Router02 private constant UNISWAP_ROUTER = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D); // Uniswap Router contract address
     IAAVE private constant AAVE_LENDING_POOL = IAAVE(0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9); // AAVE lending pool contract address
-     CErc20 private constant CUSDT = CErc20(0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9); //CUSDT compound address
+     ICERC20 private constant CUSDT = ICERC20(0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9); //CUSDT compound address
     address private owner;
     mapping(address => depositordetails)Depositor; //Tracks deposit details
     uint private highestAllocation;
@@ -74,12 +74,14 @@ contract Treasury {
             }
          //approve uniswap to spend token
         IERC20 token = Depositor[msg.sender].Token;
+        if(token == USDC || token == DAI) {
         address[] memory uniswapPath = new address[](2);
         uniswapPath[0] = address(token);
         uniswapPath[1] = address(USDT); 
           // swap here 
         IERC20(token).safeApprove(address(UNISWAP_ROUTER), _amount);
         UNISWAP_ROUTER.swapExactTokensForTokens(_amount, 100, uniswapPath, address(this), block.timestamp + 2591999); //current block.timestamp + one month (can be adjusted) ;
+        }
         uint amountTodeposit = USDT.balanceOf(address(this));
         uint aaveAllocation = (aaveAllocationPercent * amountTodeposit)/100;
         uint compoundAllocation = amountTodeposit - aaveAllocation;

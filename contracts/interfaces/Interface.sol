@@ -19,3 +19,10 @@ interface ICompound {
     function supplyRatePerBlock() external view returns (uint256);
     function approve(address spender, uint256 amount) external returns (bool);
 }
+
+interface ICERC20 {
+     function mint(uint mintAmount) external returns (uint);
+    function redeem(uint redeemTokens) external returns (uint);
+     function balanceOf(address owner) external view returns (uint);
+     function underlying()external view returns(address);
+}
