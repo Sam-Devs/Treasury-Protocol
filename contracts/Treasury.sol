@@ -3,132 +3,184 @@ pragma solidity ^0.8.9;
 import "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "../lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../lib/protocol-v2/contracts/interfaces/ILendingPool.sol";
-// import "../lib/compound-protocol/contracts/CErc20.sol";
 import "../contracts/interfaces/Interface.sol";
 
-
-/// @title A title that should describe the contract/interface
-/// @author The name of the author
-/// @notice Explain to an end user what this does
-/// @dev Explain to a developer any extra details
-
-
-contract Treasury {
+contract Treasury{
     using SafeERC20 for IERC20;
     struct depositordetails {
         uint AmountDeposited;
         IERC20 Token;
     }
 
-    IERC20 private constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48); // USDC contract address
-    IERC20 private constant USDT = IERC20(0xdAC17F958D2ee523a2206206994597C13D831ec7); // USDT contract address
-    IERC20 private constant DAI = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F); // DAI contract address
-    IUniswapV2Router02 private constant UNISWAP_ROUTER = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D); // Uniswap Router contract address
-    IAAVE private constant AAVE_LENDING_POOL = IAAVE(0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9); // AAVE lending pool contract address
-     ICERC20 private constant CUSDT = ICERC20(0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9); //CUSDT compound address
+    // IERC20 private constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48); // USDC Mainnet contract address
+    // IERC20 private constant USDT = IERC20(0xdAC17F958D2ee523a2206206994597C13D831ec7); // USDT Mainnet contract address
+    // IERC20 private constant DAI = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F); // DAI Mainnet contract address
+    // ISwapRouter private constant UNISWAP_ROUTER = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564); // UniswapV3 Router Mainnet contract address
+    // IAAVE private constant AAVE_LENDING_POOL = IAAVE(0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2); // AAVE V3 lending pool Mainnet contract address
+    //  ICompound private constant CUSDC = ICompound(0xc3d688B66703497DAA19211EEdff47f25384cdc3); //CUSDc V3 Mainnet address
+
+    IERC20 private USDC; // USDC Mock
+    IERC20 private USDT; // USDT Mock
+    IERC20 private DAI; // DAI Mock;
+    ISwapRouter private constant UNISWAP_ROUTER = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564); // UniswapV3 Router Mainnet/testnet contract address
+    IAAVE private constant AAVE_LENDING_POOL = IAAVE(0x0b913A76beFF3887d35073b8e5530755D60F78C7); // AAVE V3 lending pool testnet contract address
+     ICompound private constant CUSDC = ICompound(0xF25212E676D1F7F89Cd72fFEe66158f541246445); //CUSDc V3 testnet address
     address private owner;
-    mapping(address => depositordetails)Depositor; //Tracks deposit details
-    uint private highestAllocation;
-     uint private lowestAllocation;
+    uint private aaveAllocationPercent;
+    uint private compoundAllocationPercent;
+    mapping(address=> mapping(address => depositordetails))Depositor; //Tracks deposit details
 
     
 
-     constructor(uint _highestAllocation, uint _lowestAllocation) {
+    //set ratio to be distributed to defi protocols
+     constructor(uint _aaveAllocationPercent, uint _compoundAllocationPercent) {
+        require(_aaveAllocationPercent + _compoundAllocationPercent == 100, 'cap at 100');
         owner = msg.sender;
-        highestAllocation = _highestAllocation;
-        lowestAllocation = _lowestAllocation;
+        aaveAllocationPercent = _aaveAllocationPercent;
+        compoundAllocationPercent = _compoundAllocationPercent;
     }
 
-    //deposit token to this contract
-    function deposit(address _tokenAddress, uint256 amount) external {
-        //call approve function on erc20 before deposit
-        require(owner == msg.sender, 'not authorized');
-        if(_tokenAddress == address(USDC) || _tokenAddress == address(USDT) || _tokenAddress == address(DAI)){
+    //deposit Stable coin to this contract
+    function depositUSDC(address _tokenAddress, uint amount)external {
+         //call approve function on erc20 before deposit
+         require(owner == msg.sender, 'not authorized');
+         require(_tokenAddress == address(USDC), 'token not accepted');
         IERC20(_tokenAddress).safeTransferFrom(msg.sender, address(this), amount);
-        Depositor[msg.sender].AmountDeposited += amount;
-        Depositor[msg.sender].Token = IERC20(_tokenAddress);     
-        }
-        else{
-            revert("Token not accepted");
-        }                
+        Depositor[_tokenAddress][msg.sender].AmountDeposited += amount;
+        Depositor[_tokenAddress][msg.sender].Token = IERC20(_tokenAddress);
     }
-    
-    //swap deposited Token for usdt, check for highest returning APY and distributes funds to the protocols based on the best APY returns.
-    function OptimizeYeild(uint _amount) external {
+
+    function depositUSDT(address _tokenAddress, uint amount)external {
+         //call approve function on erc20 before deposit
+         require(owner == msg.sender, 'not authorized');
+         require(_tokenAddress == address(USDT), 'token not accepted');
+        IERC20(_tokenAddress).safeTransferFrom(msg.sender, address(this), amount);
+        Depositor[_tokenAddress][msg.sender].AmountDeposited += amount;
+        Depositor[_tokenAddress][msg.sender].Token = IERC20(_tokenAddress);
+    }
+
+    function depositDAI(address _tokenAddress, uint amount)external{
+         //call approve function on erc20 before deposit
+         require(owner == msg.sender, 'not authorized');
+         require(_tokenAddress == address(DAI), 'token not accepted');
+        IERC20(_tokenAddress).safeTransferFrom(msg.sender, address(this), amount);
+        Depositor[_tokenAddress][msg.sender].AmountDeposited += amount;
+        Depositor[_tokenAddress][msg.sender].Token = IERC20(_tokenAddress);
+    }
+
+
+
+    //swap deposited Token for usdt, and distributes funds to the protocols based on the best on ratio set.
+    function OptimizeYield(uint _amount, IERC20 token) external {
         require(owner == msg.sender, "not owner");
-        require(_amount <= Depositor[msg.sender].AmountDeposited);
-     //calculate highest yeilding APY then assign ratio based on the level of APY.  
-        uint aaveAllocationPercent;
-        uint compoundAllocationPercent;
-        uint AaveAPY = getAaveAPY() * 1000;
-        uint CompoundAPY = getCompoundAPY() * 1000;
-            if(AaveAPY > CompoundAPY){
-                aaveAllocationPercent = highestAllocation;
-                compoundAllocationPercent = lowestAllocation;
-            }else if(AaveAPY < CompoundAPY){
-                aaveAllocationPercent = lowestAllocation;
-                compoundAllocationPercent = highestAllocation;
-            }else if(AaveAPY == CompoundAPY){
-                aaveAllocationPercent = 50;
-                compoundAllocationPercent = 50;
-            }
-         //approve uniswap to spend token
-        IERC20 token = Depositor[msg.sender].Token;
-        if(token == USDC || token == DAI) {
-        address[] memory uniswapPath = new address[](2);
-        uniswapPath[0] = address(token);
-        uniswapPath[1] = address(USDT); 
-          // swap here 
-        IERC20(token).safeApprove(address(UNISWAP_ROUTER), _amount);
-        UNISWAP_ROUTER.swapExactTokensForTokens(_amount, 100, uniswapPath, address(this), block.timestamp + 2591999); //current block.timestamp + one month (can be adjusted) ;
+        require(_amount <= Depositor[address(token)][msg.sender].AmountDeposited, 'invalid');
+        require(Depositor[address(token)][msg.sender].Token == token, 'invalid address');
+        //distribute funds baseds on ratio specified at deployment point/ or ratio set     
+        //approve uniswap to spend token    
+        //interaction for if Token is USDC, based on ratio, a fraction is swapped for USDT and deposited in AAve while the rest is deposited in Compound;
+        if(token == USDC) {
+        uint amountTodeposit = _amount;
+        uint aaveAllocation = (aaveAllocationPercent * amountTodeposit)/100;
+        uint compoundAllocation = amountTodeposit - aaveAllocation; 
+        // Swap here using uniswapV3Router, grant approval then swap
+        IERC20(token).safeApprove(address(UNISWAP_ROUTER), aaveAllocation);
+        ExactInputSingleParams memory data = ExactInputSingleParams({tokenIn : address(USDC), tokenOut : address(USDT), fee : 3000, recipient : address(this), deadline : block.timestamp + 300, amountIn : aaveAllocation, amountOutMinimum : 100, sqrtPriceLimitX96: 0});
+        uint swappedAmountToaave = UNISWAP_ROUTER.exactInputSingle(data);
+        
+        // Approve aave to spend usdt token and deposit USDT to protocol
+        USDT.safeApprove(address(AAVE_LENDING_POOL), swappedAmountToaave);
+        IAAVE(AAVE_LENDING_POOL).supply(address(USDT), swappedAmountToaave, address(this), 0);
+
+        // Approve the compound CUSDC address to spend USDC and supply liquidity to compound.
+        IERC20(address(USDC)).safeApprove(address(CUSDC), compoundAllocation);     
+        CUSDC.supply(address(USDC), compoundAllocation);   
         }
-        uint amountTodeposit = USDT.balanceOf(address(this));
+        //Interaction if token is USDT, a fraction of USDT is swapped for USDC based on ratio and USDT is deposited to AAVE while USDC is supplied to compound
+        else if (token == USDT){
+        uint amountTodeposit = _amount;
         uint aaveAllocation = (aaveAllocationPercent * amountTodeposit)/100;
         uint compoundAllocation = amountTodeposit - aaveAllocation;
-         // aave interaction
-        // approve aave to spend usdt token
-        USDT.safeApprove(address(AAVE_LENDING_POOL), aaveAllocation);
-        IAAVE(AAVE_LENDING_POOL).deposit(address(USDT), aaveAllocation, address(this), 0);
-        USDT.balanceOf(address(this));
 
-    //     // compound interaction
-        // approve the compound CUSDT address to spend usdt.
-        IERC20(address(USDT)).safeApprove(address(CUSDT), compoundAllocation);     
-       CUSDT.mint(compoundAllocation);
+        //Approve uniswap to spend USDT and swap for USDC.
+        IERC20(token).safeApprove(address(UNISWAP_ROUTER), compoundAllocation);
+        ExactInputSingleParams memory data = ExactInputSingleParams({tokenIn : address(USDT), tokenOut : address(USDC), fee : 500, recipient : address(this), deadline : block.timestamp + 300, amountIn : compoundAllocation, amountOutMinimum : 0, sqrtPriceLimitX96: 0});
+        uint amountToCOMpound = UNISWAP_ROUTER.exactInputSingle(data);
+        
+        //Approve Aave and deposit USDT into the pool
+        USDT.safeApprove(address(AAVE_LENDING_POOL), aaveAllocation);
+        IAAVE(AAVE_LENDING_POOL).supply(address(USDT), aaveAllocation, address(this), 0);
+
+        //Approve compound and deposit into the pool.
+        IERC20(address(USDC)).safeApprove(address(CUSDC), amountToCOMpound);     
+        CUSDC.supply(address(USDC), amountToCOMpound);  
+        }
+        //Interaction if token is DAI, dai is swapped for both USDC and USDT and are deposited into AAVE and compound respectively.
+        else if (token == DAI) {
+        uint amountTodeposit = _amount;
+        uint aaveAllocation = (aaveAllocationPercent * amountTodeposit)/100;
+        uint compoundAllocation = amountTodeposit - aaveAllocation; 
+
+        //Approve and swap a fraction of DAI for USDT
+        IERC20(token).safeApprove(address(UNISWAP_ROUTER), amountTodeposit);
+        ExactInputSingleParams memory data = ExactInputSingleParams({tokenIn : address(DAI), tokenOut : address(USDT), fee : 3000, recipient : address(this), deadline : block.timestamp + 300, amountIn : aaveAllocation, amountOutMinimum : 100, sqrtPriceLimitX96: 0});
+        uint amountToAAVE = UNISWAP_ROUTER.exactInputSingle(data);
+
+        //Appprove and deposit swapped USDT in Aave;
+        USDT.safeApprove(address(AAVE_LENDING_POOL), amountToAAVE);
+        IAAVE(AAVE_LENDING_POOL).supply(address(USDT), amountToAAVE, address(this), 0);
+        
+        //Approve and swap the remaining fraction of DAI for USDC
+        ExactInputSingleParams memory data2 = ExactInputSingleParams({tokenIn : address(DAI), tokenOut : address(USDC), fee : 3000, recipient : address(this), deadline : block.timestamp + 300, amountIn : compoundAllocation, amountOutMinimum : 100, sqrtPriceLimitX96: 0});
+        uint amountToCompound = UNISWAP_ROUTER.exactInputSingle(data2);
+        
+        //Deposit swapped USDC into the pool
+        IERC20(address(USDC)).safeApprove(address(CUSDC), amountToCompound);     
+        CUSDC.supply(address(USDC), amountToCompound); 
+        }   
     }
+
 
     function withdrawLiquidity() external {
         require(owner == msg.sender, 'only owner');
       //withdraw from aave  
-        IAAVE(AAVE_LENDING_POOL).withdraw(address(USDT), type(uint256).max, owner);     
+        IAAVE(AAVE_LENDING_POOL).withdraw(address(USDT), type(uint256).max, address(this));     
       //withdraw from compound
-        USDT.balanceOf(address(this));
-        uint amountToredeem = CUSDT.balanceOf(address(this));
-        // CUSDT.approve(address(CUSDT), amountToredeem);
-        CUSDT.redeem(amountToredeem);
-        USDT.balanceOf(address(this));
-        address underlyingToken = (CUSDT).underlying();
-        IERC20(underlyingToken).safeTransfer(msg.sender, IERC20(underlyingToken).balanceOf(address(this)));
+        uint amountToredeem = CUSDC.balanceOf(address(this));
+        CUSDC.withdraw(address(USDC), amountToredeem);
     }
-    function setAllocationRatio(uint _highestAllocation, uint _lowestAllocation) external {
+
+    //sets Allocation ratio
+    function setAllocationRatio(uint _aaveAllocationPercent, uint _compoundAllocationPercent) external {
         require(owner == msg.sender, 'not authorized');
-        highestAllocation = _highestAllocation;
-        lowestAllocation = _lowestAllocation;
-    }
-    function getAaveAPY() internal view returns (uint) {
-       ILendingPoolAddressesProvider provider = ILendingPoolAddressesProvider(0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5); // Aave V2 mainnet address provider
-        ILendingPool lendingPool = ILendingPool(provider.getLendingPool());
-        DataTypes.ReserveData memory data = lendingPool.getReserveData(address(USDT));
-        uint liquiidityRate = data.currentLiquidityRate;
-        return (liquiidityRate)/1e27; //to convert to percentage from ray unit.
+        aaveAllocationPercent = _aaveAllocationPercent;
+        compoundAllocationPercent = _compoundAllocationPercent;
     }
 
-    function getCompoundAPY() internal view returns (uint256) {
-        ICompound compound = ICompound(address(CUSDT));
-        uint256 currentSupplyRate = compound.supplyRatePerBlock();
-        return (currentSupplyRate * 2102400)/1e18; // blocks per year // to convert to percentage. 
+    //withdraws deposited funds
+    function withdrawFunds(address _tokenAddress, uint256 amount) external{
+        require(owner == msg.sender, 'not authorized');
+        if(_tokenAddress == address(USDC) || _tokenAddress == address(USDT) || _tokenAddress == address(DAI)){       
+        IERC20(_tokenAddress).safeTransfer(msg.sender, amount);
+            //Update Amount deposited;
+            if (amount > Depositor[_tokenAddress][msg.sender].AmountDeposited){
+                Depositor[_tokenAddress][msg.sender].AmountDeposited = 0;
+            }else{
+                Depositor[_tokenAddress][msg.sender].AmountDeposited -= amount;
+            }
+        }
+        else{
+            revert("Token absent");
+        }   
     }
-
+  
+  //Only necessary to initialize mock Addresses, it will be taken off on deployment to mainnet and addresses will be saved as constant;
+  //This will not be included the read me file
+  function setAddresses(IERC20 _usdc, IERC20 _usdt, IERC20 _dai)external {
+    require(msg.sender == owner, 'not authorized');
+      USDC = _usdc;
+      USDT = _usdt;
+      DAI = _dai;
+  }
 receive() external payable {}
 
 }

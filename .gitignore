@@ -137,4 +137,4 @@ typechain-types
 cache
 artifacts
 
-lib/
+.env
