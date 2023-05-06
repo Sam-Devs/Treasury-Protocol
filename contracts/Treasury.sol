@@ -12,19 +12,19 @@ contract Treasury{
         IERC20 Token;
     }
 
-    // IERC20 private constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48); // USDC Mainnet contract address
-    // IERC20 private constant USDT = IERC20(0xdAC17F958D2ee523a2206206994597C13D831ec7); // USDT Mainnet contract address
-    // IERC20 private constant DAI = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F); // DAI Mainnet contract address
-    // ISwapRouter private constant UNISWAP_ROUTER = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564); // UniswapV3 Router Mainnet contract address
-    // IAAVE private constant AAVE_LENDING_POOL = IAAVE(0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2); // AAVE V3 lending pool Mainnet contract address
-    //  ICompound private constant CUSDC = ICompound(0xc3d688B66703497DAA19211EEdff47f25384cdc3); //CUSDc V3 Mainnet address
+    IERC20 private constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48); // USDC Mainnet contract address
+    IERC20 private constant USDT = IERC20(0xdAC17F958D2ee523a2206206994597C13D831ec7); // USDT Mainnet contract address
+    IERC20 private constant DAI = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F); // DAI Mainnet contract address
+    ISwapRouter private constant UNISWAP_ROUTER = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564); // UniswapV3 Router Mainnet contract address
+    IAAVE private constant AAVE_LENDING_POOL = IAAVE(0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2); // AAVE V3 lending pool Mainnet contract address
+     ICompound private constant CUSDC = ICompound(0xc3d688B66703497DAA19211EEdff47f25384cdc3); //CUSDc V3 Mainnet address
 
-    IERC20 private USDC; // USDC Mock
-    IERC20 private USDT; // USDT Mock
-    IERC20 private DAI; // DAI Mock;
-    ISwapRouter private constant UNISWAP_ROUTER = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564); // UniswapV3 Router Mainnet/testnet contract address
-    IAAVE private constant AAVE_LENDING_POOL = IAAVE(0x0b913A76beFF3887d35073b8e5530755D60F78C7); // AAVE V3 lending pool testnet contract address
-     ICompound private constant CUSDC = ICompound(0xF25212E676D1F7F89Cd72fFEe66158f541246445); //CUSDc V3 testnet address
+    // IERC20 private USDC; // USDC Mock
+    // IERC20 private USDT; // USDT Mock
+    // IERC20 private DAI; // DAI Mock;
+    // ISwapRouter private constant UNISWAP_ROUTER = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564); // UniswapV3 Router Mainnet/testnet contract address
+    // IAAVE private constant AAVE_LENDING_POOL = IAAVE(0x0b913A76beFF3887d35073b8e5530755D60F78C7); // AAVE V3 lending pool testnet contract address
+    //  ICompound private constant CUSDC = ICompound(0xF25212E676D1F7F89Cd72fFEe66158f541246445); //CUSDc V3 testnet address
     address private owner;
     uint private aaveAllocationPercent;
     uint private compoundAllocationPercent;
@@ -175,12 +175,12 @@ contract Treasury{
   
   //Only necessary to initialize mock Addresses, it will be taken off on deployment to mainnet and addresses will be saved as constant;
   //This will not be included the read me file
-  function setAddresses(IERC20 _usdc, IERC20 _usdt, IERC20 _dai)external {
-    require(msg.sender == owner, 'not authorized');
-      USDC = _usdc;
-      USDT = _usdt;
-      DAI = _dai;
-  }
+//   function setAddresses(IERC20 _usdc, IERC20 _usdt, IERC20 _dai)external {
+//     require(msg.sender == owner, 'not authorized');
+//       USDC = _usdc;
+//       USDT = _usdt;
+//       DAI = _dai;
+//   }
 receive() external payable {}
 
 }

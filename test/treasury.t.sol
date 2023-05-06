@@ -34,7 +34,7 @@ contract TreasuryTest is Test {
     function testOptimizeYeild() public {
         testDeposit();
         vm.startPrank(owner);
-        treasury.OptimizeYeild(10 * 1e18, IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F));
+        treasury.OptimizeYield(10 * 1e18, IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F));
         vm.warp(block.timestamp + 1704067199);
         treasury.withdrawLiquidity();
         treasury.withdrawFunds(0x6B175474E89094C44Da98b954EedeAC495271d0F, 1e18);
