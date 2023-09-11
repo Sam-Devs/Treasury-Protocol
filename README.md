@@ -14,7 +14,7 @@
  - Returns on Liquidity provided with minimal risk.
  - Project utilizes Hardhat and Foundry integration.
 
-## Contribution
+## Setup
 ```shell
  git clone https://github.com/Sam-Devs/Treasury-Protocol.git
  cd Treasury-Protocol
