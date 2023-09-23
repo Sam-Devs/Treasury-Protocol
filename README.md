@@ -39,6 +39,8 @@ NOTE : Pending the time aave protocol-v2 will be updated, Change the pragma soli
  lib/protocol-v2/contracts/interfaces/ILendingPoolAddressesProvider.sol
  lib/protocol-v2/contracts/protocol/libraries/types/DataTypes.sol
 
+NOTE: There is a blocker implementing the swap feature i.e. customErc20/USDC. 
+**Explanation**: To implement this I had create a separate smart contract to mint a new liquidity position. I did a test run while forking the mainnet with DAI/USDC; it worked and it minted a new liquidity position. But when I tried using the cusomERC20/USDC pair, it failed to mint.  Then I realized that the docs specified that the customERC20/USDC pool must have been created and initialized before the minting can be done. The blocker is creating and initializing the pool.
 ```
 ## Testing work Flow
 Utilized Foundry and forked the Mainnet before carrying out the following : 
